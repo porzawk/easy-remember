@@ -73,7 +73,7 @@ export default function AddVocabPage() {
       <div>
         <h1 className="text-2xl font-bold">เพิ่มคำศัพท์</h1>
         <p className="text-white/70">
-          พิมพ์คำที่เจอในเกม แล้วให้ AI ช่วยสร้างคำแปลและประโยคตัวอย่าง
+          พิมพ์คำที่อยากจำ แล้วให้ AI ช่วยสร้างคำแปลและประโยคตัวอย่าง
         </p>
       </div>
 
@@ -81,7 +81,7 @@ export default function AddVocabPage() {
         <input
           value={word}
           onChange={(e) => setWord(e.target.value)}
-          placeholder="เช่น dungeon, loot, quest..."
+          placeholder="เช่น improve, schedule, brave..."
           className="flex-1 rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none focus:border-emerald-400"
         />
         <button

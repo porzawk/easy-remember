@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { NavBar } from "@/components/NavBar";
 
 export const metadata: Metadata = {
-  title: "Easy Remember — ฝึกศัพท์อังกฤษจากเกม",
+  title: "Easy Remember — ฝึกศัพท์ภาษาอังกฤษ",
   description: "เพิ่มคำศัพท์ ได้คำแปล + ประโยคตัวอย่าง และทบทวนให้ไม่ลืม",
 };
 

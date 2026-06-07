@@ -63,8 +63,8 @@ export default async function DashboardPage() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">คำศัพท์ล่าสุด</h2>
-          <Link href="/vocab" className="text-sm text-emerald-300 hover:text-emerald-200">
-            + เพิ่มคำศัพท์
+          <Link href="/words" className="text-sm text-emerald-300 hover:text-emerald-200">
+            ดูทั้งหมด →
           </Link>
         </div>
 
@@ -78,19 +78,24 @@ export default async function DashboardPage() {
         ) : (
           <ul className="divide-y divide-white/10 overflow-hidden rounded-xl border border-white/10 bg-white/5">
             {recent.map((v) => (
-              <li key={v.id} className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <p className="font-medium">
-                    {v.word}{" "}
-                    {v.partOfSpeech && (
-                      <span className="text-xs text-white/50">({v.partOfSpeech})</span>
-                    )}
-                  </p>
-                  <p className="text-sm text-white/70">{v.translation}</p>
-                </div>
-                <span className="text-xs text-white/40">
-                  ทบทวน {v.reviewCount} ครั้ง
-                </span>
+              <li key={v.id}>
+                <Link
+                  href={`/vocab/${v.id}`}
+                  className="flex items-center justify-between px-4 py-3 hover:bg-white/5"
+                >
+                  <div>
+                    <p className="font-medium">
+                      {v.word}{" "}
+                      {v.partOfSpeech && (
+                        <span className="text-xs text-white/50">({v.partOfSpeech})</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-white/70">{v.translation}</p>
+                  </div>
+                  <span className="text-xs text-white/40">
+                    ทบทวน {v.reviewCount} ครั้ง
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>

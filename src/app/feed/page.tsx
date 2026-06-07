@@ -4,7 +4,7 @@ export const revalidate = 1800;
 
 // วิดีโอช่องฝึกภาษาอังกฤษ (embed YouTube)
 const VIDEOS = [
-  { id: "juKd26qkNAw", title: "English with games — vocabulary in context" },
+  { id: "juKd26qkNAw", title: "English vocabulary in context" },
   { id: "EYxFyztMcMc", title: "Learn English through stories" },
   { id: "ED8jzgEy3kk", title: "Daily English listening practice" },
 ];

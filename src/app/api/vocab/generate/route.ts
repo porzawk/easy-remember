@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { generateVocab } from "@/lib/zai";
+import { generateVocab } from "@/lib/ai";
 
 // สร้างคำแปล/ประโยคตัวอย่างจาก Z.ai (ยังไม่บันทึก — ใช้ดู preview ก่อน)
 export async function POST(req: Request) {

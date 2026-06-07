@@ -6,7 +6,7 @@ export default function LoginPage() {
       <div>
         <h1 className="text-3xl font-bold">📚 Easy Remember</h1>
         <p className="mt-2 max-w-md text-white/70">
-          เพิ่มคำศัพท์จากเกมที่เล่น แล้วรับคำแปล + ประโยคตัวอย่างจาก AI
+          เพิ่มคำศัพท์ที่อยากจำ แล้วรับคำแปล + ประโยคตัวอย่างจาก AI
           พร้อมระบบทบทวนให้ไม่ลืม
         </p>
       </div>

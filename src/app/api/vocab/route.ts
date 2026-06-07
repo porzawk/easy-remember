@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { generateVocab } from "@/lib/zai";
+import { generateVocab } from "@/lib/ai";
 import type { Prisma } from "@prisma/client";
 
 // GET /api/vocab — รายการคำศัพท์ทั้งหมดของผู้ใช้

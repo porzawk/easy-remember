@@ -1,4 +1,5 @@
-// Z.ai integration (OpenAI-compatible Chat Completions API)
+// AI integration (OpenAI-compatible Chat Completions API)
+// default: Groq (ฟรี) — สลับเป็น provider อื่นได้ผ่าน env AI_BASE_URL / AI_MODEL
 // ใช้สร้างคำแปล / ประโยคตัวอย่าง / ข้อมูลที่ควรรู้ ของคำศัพท์
 
 export type VocabExample = { en: string; th: string };
@@ -12,7 +13,7 @@ export type GeneratedVocab = {
   notes: string;
 };
 
-const SYSTEM_PROMPT = `คุณคือผู้ช่วยสอนภาษาอังกฤษสำหรับคนไทยที่ชอบเล่นเกม
+const SYSTEM_PROMPT = `คุณคือผู้ช่วยสอนภาษาอังกฤษสำหรับคนไทย
 เมื่อได้รับคำศัพท์ภาษาอังกฤษหนึ่งคำ ให้สร้างข้อมูลช่วยจำที่ใช้งานได้จริง
 ตอบกลับเป็น JSON ตามรูปแบบนี้เท่านั้น ห้ามมีข้อความอื่นนอก JSON:
 {
@@ -21,9 +22,9 @@ const SYSTEM_PROMPT = `คุณคือผู้ช่วยสอนภาษ
   "partOfSpeech": "ชนิดของคำ เช่น noun, verb, adjective",
   "pronunciation": "คำอ่านแบบไทย หรือ IPA",
   "examples": [
-    { "en": "ประโยคตัวอย่างภาษาอังกฤษง่าย ๆ (เน้นบริบทในเกม)", "th": "คำแปลภาษาไทย" }
+    { "en": "ประโยคตัวอย่างภาษาอังกฤษง่าย ๆ ที่ใช้ในชีวิตประจำวัน", "th": "คำแปลภาษาไทย" }
   ],
-  "notes": "สิ่งที่ควรรู้เพิ่มเติม เช่น คำพ้อง การใช้งานในเกม ข้อควรระวัง (ภาษาไทย)"
+  "notes": "สิ่งที่ควรรู้เพิ่มเติม เช่น คำพ้อง วิธีใช้งาน ข้อควรระวัง (ภาษาไทย)"
 }
 ให้ examples 2-3 ประโยค`;
 

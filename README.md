@@ -1,6 +1,6 @@
 # Easy Remember 📚
 
-เว็บฝึกคำศัพท์ภาษาอังกฤษจากเกม — พิมพ์คำที่เจอในเกม รับคำแปล + ประโยคตัวอย่างจาก AI (Z.ai) และมีระบบทบทวนแบบ spaced repetition กันลืม
+เว็บฝึกคำศัพท์ภาษาอังกฤษ — พิมพ์คำที่อยากจำ รับคำแปล + ประโยคตัวอย่างจาก AI และมีระบบทบทวนแบบ spaced repetition กันลืม
 
 ## ฟีเจอร์
 
@@ -92,7 +92,7 @@ src/
 │       └── review/route.ts           # due words / mark reviewed
 ├── lib/
 │   ├── prisma.ts             # Prisma client
-│   ├── zai.ts                # Z.ai integration
+│   ├── ai.ts                 # AI integration (OpenAI-compatible)
 │   ├── review.ts             # ตรรกะ spaced repetition
 │   └── feed.ts               # ดึง/parse RSS ข่าว
 ├── components/NavBar.tsx

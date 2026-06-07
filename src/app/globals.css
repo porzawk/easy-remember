@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #07140d;
-  --foreground: #e6f2ea;
+  --background: #030a06;
+  --foreground: #dcebe2;
 }
 
 html,
@@ -12,7 +12,7 @@ body {
 }
 
 body {
-  background: linear-gradient(160deg, #07140d 0%, #0f2a1c 100%);
+  background: linear-gradient(160deg, #030a06 0%, #0a1b11 100%);
   color: var(--foreground);
   min-height: 100vh;
   font-family: ui-sans-serif, system-ui, "Segoe UI", "Noto Sans Thai", sans-serif;
