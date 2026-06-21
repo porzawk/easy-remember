@@ -4,6 +4,17 @@
 
 export type VocabExample = { en: string; th: string };
 
+// บังคับให้คำศัพท์เป็น Pascal Case เสมอ (ขึ้นต้นตัวใหญ่ทุกคำ) แม้พิมพ์มาเป็นตัวเล็ก
+// เช่น "improve" -> "Improve", "ice cream" -> "Ice Cream"
+export function toPascalCase(input: string): string {
+  return input
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
 export type GeneratedVocab = {
   word: string;
   translation: string;
@@ -71,7 +82,8 @@ export async function generateVocab(word: string): Promise<GeneratedVocab> {
   const parsed = parseJson(content);
 
   return {
-    word: String(parsed.word ?? word).trim(),
+    // ใช้คำที่ AI แก้สะกดให้แล้ว และบังคับเป็น Pascal Case เสมอ
+    word: toPascalCase(String(parsed.word ?? word)),
     translation: String(parsed.translation ?? "").trim(),
     partOfSpeech: String(parsed.partOfSpeech ?? "").trim(),
     pronunciation: String(parsed.pronunciation ?? "").trim(),

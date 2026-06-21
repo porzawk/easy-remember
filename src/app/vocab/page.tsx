@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { SpeakButton } from "@/components/SpeakButton";
 
 type Example = { en: string; th: string };
 type Generated = {
@@ -109,6 +110,7 @@ export default function AddVocabPage() {
         <div className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-5">
           <div className="flex items-baseline gap-3">
             <h2 className="text-xl font-bold">{preview.word}</h2>
+            <SpeakButton text={preview.word} label={`ฟังเสียงคำว่า ${preview.word}`} size="md" />
             {preview.partOfSpeech && (
               <span className="text-sm text-white/50">{preview.partOfSpeech}</span>
             )}
@@ -125,7 +127,10 @@ export default function AddVocabPage() {
               <ul className="space-y-2">
                 {preview.examples.map((ex, i) => (
                   <li key={i} className="rounded-lg bg-black/20 p-3">
-                    <p>{ex.en}</p>
+                    <div className="flex items-start gap-2">
+                      <p className="flex-1">{ex.en}</p>
+                      <SpeakButton text={ex.en} label="ฟังเสียงประโยคนี้" />
+                    </div>
                     <p className="text-sm text-white/60">{ex.th}</p>
                   </li>
                 ))}

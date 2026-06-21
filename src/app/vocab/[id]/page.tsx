@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { DeleteVocabButton } from "@/components/DeleteVocabButton";
+import { SpeakButton } from "@/components/SpeakButton";
 
 type Example = { en: string; th: string };
 
@@ -31,6 +32,7 @@ export default async function VocabDetailPage({
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
         <div className="flex flex-wrap items-baseline gap-3">
           <h1 className="text-3xl font-bold">{vocab.word}</h1>
+          <SpeakButton text={vocab.word} label={`ฟังเสียงคำว่า ${vocab.word}`} size="md" />
           {vocab.partOfSpeech && (
             <span className="text-sm text-white/50">{vocab.partOfSpeech}</span>
           )}
@@ -47,7 +49,10 @@ export default async function VocabDetailPage({
             <ul className="space-y-2">
               {examples.map((ex, i) => (
                 <li key={i} className="rounded-lg bg-black/20 p-3">
-                  <p>{ex.en}</p>
+                  <div className="flex items-start gap-2">
+                    <p className="flex-1">{ex.en}</p>
+                    <SpeakButton text={ex.en} label="ฟังเสียงประโยคนี้" />
+                  </div>
                   <p className="text-sm text-white/60">{ex.th}</p>
                 </li>
               ))}

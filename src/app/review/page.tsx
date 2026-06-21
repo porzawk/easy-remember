@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { SpeakButton } from "@/components/SpeakButton";
 
 type Example = { en: string; th: string };
 type Vocab = {
@@ -81,7 +82,10 @@ export default function ReviewPage() {
       </div>
 
       <div className="min-h-[18rem] rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
-        <p className="text-3xl font-bold">{current.word}</p>
+        <div className="flex items-center justify-center gap-3">
+          <p className="text-3xl font-bold">{current.word}</p>
+          <SpeakButton text={current.word} label={`ฟังเสียงคำว่า ${current.word}`} size="md" />
+        </div>
         {current.pronunciation && (
           <p className="mt-1 text-emerald-300">/{current.pronunciation}/</p>
         )}
@@ -101,7 +105,10 @@ export default function ReviewPage() {
               <ul className="space-y-2">
                 {current.examples.map((ex, i) => (
                   <li key={i} className="rounded-lg bg-black/20 p-3">
-                    <p>{ex.en}</p>
+                    <div className="flex items-start gap-2">
+                      <p className="flex-1">{ex.en}</p>
+                      <SpeakButton text={ex.en} label="ฟังเสียงประโยคนี้" />
+                    </div>
                     <p className="text-sm text-white/60">{ex.th}</p>
                   </li>
                 ))}

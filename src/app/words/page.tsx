@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { SpeakButton } from "@/components/SpeakButton";
 
 export default async function WordsPage() {
   const session = await auth();
@@ -35,12 +36,12 @@ export default async function WordsPage() {
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {vocabs.map((v) => (
-            <li key={v.id}>
+            <li key={v.id} className="relative">
               <Link
                 href={`/vocab/${v.id}`}
                 className="block h-full rounded-xl border border-white/10 bg-white/5 p-4 hover:border-emerald-400/50 hover:bg-white/10"
               >
-                <div className="flex items-baseline justify-between gap-2">
+                <div className="flex items-baseline justify-between gap-2 pr-9">
                   <p className="font-medium">
                     {v.word}{" "}
                     {v.partOfSpeech && (
@@ -53,6 +54,11 @@ export default async function WordsPage() {
                 </div>
                 <p className="mt-1 text-sm text-white/70">{v.translation}</p>
               </Link>
+              <SpeakButton
+                text={v.word}
+                label={`ฟังเสียงคำว่า ${v.word}`}
+                className="absolute right-3 top-3"
+              />
             </li>
           ))}
         </ul>

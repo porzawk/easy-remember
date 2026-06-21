@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { generateVocab } from "@/lib/ai";
+import { generateVocab, toPascalCase } from "@/lib/ai";
 import type { Prisma } from "@prisma/client";
 
 // GET /api/vocab — รายการคำศัพท์ทั้งหมดของผู้ใช้
@@ -27,10 +27,12 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const word = String(body?.word ?? "").trim();
-  if (!word) {
+  const rawWord = String(body?.word ?? "").trim();
+  if (!rawWord) {
     return NextResponse.json({ error: "กรุณากรอกคำศัพท์" }, { status: 400 });
   }
+  // บังคับ Pascal Case เสมอ (generateVocab จะทำให้เองในกรณีเรียก AI)
+  const word = toPascalCase(rawWord);
 
   try {
     // ถ้า client ส่ง translation มาแล้ว ใช้เลย ไม่งั้นเรียก Z.ai
