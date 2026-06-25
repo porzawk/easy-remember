@@ -18,6 +18,12 @@ model User {
   sessions      Session[]
   vocabs        Vocab[]
   createdAt     DateTime  @default(now())
+
+  // ===== Habit / streak =====
+  dailyGoal     Int       @default(5)   // เป้าหมายต่อวัน (จำนวนการทบทวน/เพิ่มคำ)
+  streakCount   Int       @default(0)   // ทำต่อเนื่องกี่วัน
+  longestStreak Int       @default(0)   // สถิติต่อเนื่องสูงสุด
+  lastActiveOn  DateTime?                // วันที่มีกิจกรรมล่าสุด (ใช้คำนวณ streak)
 }
 
 model Account {
@@ -68,12 +74,17 @@ model Vocab {
   examples       Json      @default("[]")     // ประโยคตัวอย่าง [{ en, th }]
   notes          String?                      // อื่น ๆ ที่ควรรู้ (synonyms, การใช้งาน)
 
-  // ===== Spaced repetition =====
-  reviewCount    Int       @default(0)        // ทบทวนไปแล้วกี่ครั้ง
+  // ===== Spaced repetition (SM-2) =====
+  reviewCount    Int       @default(0)        // ทบทวนไปแล้วกี่ครั้ง (สถิติ)
   lastReviewedAt DateTime?                     // ทบทวนล่าสุดเมื่อไหร่
+  easeFactor     Float     @default(2.5)       // ค่าความง่าย (SM-2 ease factor)
+  interval       Int       @default(0)         // ระยะห่างรอบถัดไป (วัน)
+  repetitions    Int       @default(0)         // จำนวนครั้งที่ตอบถูกติดต่อกัน
+  dueAt          DateTime  @default(now())      // ถึงกำหนดทบทวนเมื่อไหร่
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   @@unique([userId, word])
   @@index([userId])
+  @@index([userId, dueAt])
 }

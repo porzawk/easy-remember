@@ -24,7 +24,8 @@ export type GeneratedVocab = {
   notes: string;
 };
 
-const SYSTEM_PROMPT = `คุณคือผู้ช่วยสอนภาษาอังกฤษสำหรับคนไทย
+const SYSTEM_PROMPT = `คุณคือผู้ช่วยสอนภาษาอังกฤษสำหรับคนไทย เน้นการนำไปใช้ในชีวิตประจำวันจริง
+(ที่ทำงาน การสนทนา การเดินทาง โซเชียล อีเมล) ไม่ใช่ภาษาวิชาการหรือในเกม
 เมื่อได้รับคำศัพท์ภาษาอังกฤษหนึ่งคำ ให้สร้างข้อมูลช่วยจำที่ใช้งานได้จริง
 ตอบกลับเป็น JSON ตามรูปแบบนี้เท่านั้น ห้ามมีข้อความอื่นนอก JSON:
 {
@@ -33,15 +34,20 @@ const SYSTEM_PROMPT = `คุณคือผู้ช่วยสอนภาษ
   "partOfSpeech": "ชนิดของคำ เช่น noun, verb, adjective",
   "pronunciation": "คำอ่านแบบไทย หรือ IPA",
   "examples": [
-    { "en": "ประโยคตัวอย่างภาษาอังกฤษง่าย ๆ ที่ใช้ในชีวิตประจำวัน", "th": "คำแปลภาษาไทย" }
+    { "en": "ประโยคที่เจอบ่อยในชีวิตประจำวันจริง พูดได้เลย", "th": "คำแปลภาษาไทย" }
   ],
-  "notes": "สิ่งที่ควรรู้เพิ่มเติม เช่น คำพ้อง วิธีใช้งาน ข้อควรระวัง (ภาษาไทย)"
+  "notes": "สิ่งที่ควรรู้เพื่อใช้ให้ถูก: คำที่มักใช้คู่กัน (collocations), สถานการณ์ที่ใช้, ระดับความสุภาพ/ทางการ, ข้อควรระวัง (ภาษาไทย)"
 }
-ให้ examples 2-3 ประโยค`;
+ให้ examples 3 ประโยคจากสถานการณ์ในชีวิตประจำวันที่ต่างกัน`;
 
-export async function generateVocab(word: string): Promise<GeneratedVocab> {
-  // รองรับ env แบบทั่วไป (AI_*) โดยยังเข้ากันได้กับของเดิม (ZAI_*)
-  // ค่า default ชี้ไปที่ Groq ซึ่งมี free tier (OpenAI-compatible)
+// เรียก Chat Completions (OpenAI-compatible) แล้วคืนเนื้อหา JSON เป็น string
+// รองรับ env แบบทั่วไป (AI_*) โดยยังเข้ากันได้กับของเดิม (ZAI_*)
+// ค่า default ชี้ไปที่ Groq ซึ่งมี free tier
+async function chatJson(
+  systemPrompt: string,
+  userPrompt: string,
+  temperature = 0.6,
+): Promise<string> {
   const apiKey = process.env.AI_API_KEY ?? process.env.ZAI_API_KEY;
   const baseUrl =
     process.env.AI_BASE_URL ??
@@ -62,23 +68,26 @@ export async function generateVocab(word: string): Promise<GeneratedVocab> {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.6,
+      temperature,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `คำศัพท์: ${word}` },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
       ],
     }),
   });
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Z.ai request failed (${res.status}): ${text}`);
+    throw new Error(`AI request failed (${res.status}): ${text}`);
   }
 
   const data = await res.json();
-  const content: string = data?.choices?.[0]?.message?.content ?? "";
+  return data?.choices?.[0]?.message?.content ?? "";
+}
 
+export async function generateVocab(word: string): Promise<GeneratedVocab> {
+  const content = await chatJson(SYSTEM_PROMPT, `คำศัพท์: ${word}`);
   const parsed = parseJson(content);
 
   return {
@@ -95,6 +104,39 @@ export async function generateVocab(word: string): Promise<GeneratedVocab> {
           .map((e: VocabExample) => ({ en: String(e.en), th: String(e.th ?? "") }))
       : [],
     notes: String(parsed.notes ?? "").trim(),
+  };
+}
+
+// ===== ฝึกแต่งประโยคเอง (production practice) =====
+export type SentenceCheck = {
+  correct: boolean; // ใช้คำถูกบริบทและไวยากรณ์โอเคไหม
+  corrected: string; // ประโยคที่แก้ให้ถูก/เป็นธรรมชาติขึ้น
+  feedback: string; // คำอธิบายภาษาไทย สั้น เป็นกำลังใจ
+};
+
+const CHECK_SYSTEM_PROMPT = `คุณคือครูสอนภาษาอังกฤษที่ใจดีสำหรับคนไทย
+ผู้เรียนจะแต่งประโยคภาษาอังกฤษเองโดยใช้คำที่กำหนด หน้าที่คุณคือตรวจว่าใช้ "คำนั้น" ถูกความหมายและบริบทไหม และไวยากรณ์โอเคไหม
+ตอบกลับเป็น JSON เท่านั้น ห้ามมีข้อความอื่นนอก JSON:
+{
+  "correct": true/false,  // true ถ้าใช้คำถูกบริบทและสื่อสารเข้าใจได้ (ผิดเล็กน้อยเรื่องไวยากรณ์ยังถือว่า true ได้)
+  "corrected": "ประโยคเดิมที่แก้ให้ถูกและเป็นธรรมชาติแบบเจ้าของภาษา ถ้าถูกอยู่แล้วก็คืนประโยคเดิม",
+  "feedback": "อธิบายเป็นภาษาไทยสั้น ๆ ว่าดีตรงไหน/ควรปรับอะไร ให้กำลังใจ"
+}`;
+
+export async function checkSentence(
+  word: string,
+  sentence: string,
+): Promise<SentenceCheck> {
+  const content = await chatJson(
+    CHECK_SYSTEM_PROMPT,
+    `คำที่ต้องใช้: ${word}\nประโยคของผู้เรียน: ${sentence}`,
+    0.3,
+  );
+  const parsed = parseJson(content);
+  return {
+    correct: Boolean(parsed.correct),
+    corrected: String(parsed.corrected ?? sentence).trim(),
+    feedback: String(parsed.feedback ?? "").trim(),
   };
 }
 

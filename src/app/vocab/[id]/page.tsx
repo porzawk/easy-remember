@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { DeleteVocabButton } from "@/components/DeleteVocabButton";
 import { SpeakButton } from "@/components/SpeakButton";
+import { SentencePractice } from "@/components/SentencePractice";
 
 type Example = { en: string; th: string };
 
@@ -75,6 +76,8 @@ export default async function VocabDetailPage({
           )}
         </div>
       </div>
+
+      <SentencePractice word={vocab.word} />
 
       <div className="flex justify-end">
         <DeleteVocabButton id={vocab.id} />

@@ -16,6 +16,15 @@ type Vocab = {
   reviewCount: number;
 };
 
+type Rating = "again" | "good" | "easy";
+// สลับทิศทางการนึก: en->th (เห็นคำอังกฤษ นึกคำแปล) / th->en (เห็นคำแปล นึกคำอังกฤษ = ฝึกใช้จริง)
+type Direction = "en2th" | "th2en";
+
+function pickDirection(seed: string): Direction {
+  // สุ่มจาก id ของคำ (เสถียรต่อ render เดียวกัน) ให้คละทิศทาง
+  return seed.charCodeAt(0) % 2 === 0 ? "en2th" : "th2en";
+}
+
 export default function ReviewPage() {
   const [queue, setQueue] = useState<Vocab[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -41,7 +50,7 @@ export default function ReviewPage() {
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
         <p className="text-5xl">🎉</p>
         <h1 className="text-2xl font-bold">
-          {done > 0 ? `ทบทวนครบ ${done} คำแล้ว!` : "ไม่มีคำที่ต้องทบทวนตอนนี้"}
+          {done > 0 ? `ทบทวนครบ ${done} ครั้งแล้ว!` : "ไม่มีคำที่ต้องทบทวนตอนนี้"}
         </h1>
         <p className="text-white/60">เยี่ยมมาก กลับมาทบทวนใหม่ในวันถัดไปได้เลย</p>
         <Link
@@ -54,39 +63,65 @@ export default function ReviewPage() {
     );
   }
 
-  async function markReviewed() {
-    await fetch("/api/review", {
+  const direction = pickDirection(current.id);
+
+  async function rate(rating: Rating) {
+    const card = current;
+    fetch("/api/review", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: current.id }),
+      body: JSON.stringify({ id: card.id, rating }),
     }).catch(() => {});
+
     setDone((d) => d + 1);
     setRevealed(false);
-    setIndex((i) => i + 1);
+
+    if (rating === "again") {
+      // นึกไม่ออก: เอาคำนี้ไปต่อท้ายคิว เพื่อทวนซ้ำอีกครั้งในรอบนี้
+      setQueue((q) => {
+        if (!q) return q;
+        const rest = q.slice(index + 1);
+        return [...q.slice(0, index), ...rest, card];
+      });
+      // ถ้ายังมีคำถัดไป index คงเดิม (คำถัดมาขยับเข้ามาแทน), ถ้าหมดแล้วค่อยไปเจอ card ที่ต่อท้าย
+      setIndex((i) => i);
+    } else {
+      setIndex((i) => i + 1);
+    }
   }
+
+  // ด้านบนของการ์ด = สิ่งที่ต้องนึก, ด้านล่าง (เฉลย) = คำตอบ
+  const promptIsEnglish = direction === "en2th";
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">ทบทวนคำศัพท์</h1>
-        <span className="text-sm text-white/60">
-          {index + 1} / {total}
-        </span>
+        <span className="text-sm text-white/60">เหลือ {total - index} คำ</span>
       </div>
 
       <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
         <div
           className="h-full bg-emerald-500 transition-all"
-          style={{ width: `${(index / total) * 100}%` }}
+          style={{ width: `${total > 0 ? (index / total) * 100 : 0}%` }}
         />
       </div>
 
       <div className="min-h-[18rem] rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
-        <div className="flex items-center justify-center gap-3">
-          <p className="text-3xl font-bold">{current.word}</p>
-          <SpeakButton text={current.word} label={`ฟังเสียงคำว่า ${current.word}`} size="md" />
-        </div>
-        {current.pronunciation && (
+        <p className="mb-4 text-xs uppercase tracking-wide text-white/40">
+          {promptIsEnglish ? "คำนี้แปลว่าอะไร?" : "ภาษาอังกฤษพูดว่าอะไร?"}
+        </p>
+
+        {promptIsEnglish ? (
+          <div className="flex items-center justify-center gap-3">
+            <p className="text-3xl font-bold">{current.word}</p>
+            <SpeakButton text={current.word} label={`ฟังเสียงคำว่า ${current.word}`} size="md" />
+          </div>
+        ) : (
+          <p className="text-3xl font-bold">{current.translation}</p>
+        )}
+
+        {promptIsEnglish && current.pronunciation && (
           <p className="mt-1 text-emerald-300">/{current.pronunciation}/</p>
         )}
 
@@ -95,11 +130,21 @@ export default function ReviewPage() {
             onClick={() => setRevealed(true)}
             className="mt-10 rounded-lg bg-emerald-500 px-6 py-3 font-medium hover:bg-emerald-400"
           >
-            เฉลยคำแปล
+            ดูเฉลย
           </button>
         ) : (
           <div className="mt-6 space-y-4 text-left">
-            <p className="text-center text-xl">{current.translation}</p>
+            {promptIsEnglish ? (
+              <p className="text-center text-xl">{current.translation}</p>
+            ) : (
+              <div className="flex items-center justify-center gap-3">
+                <p className="text-center text-2xl font-bold">{current.word}</p>
+                <SpeakButton text={current.word} label={`ฟังเสียงคำว่า ${current.word}`} size="md" />
+                {current.pronunciation && (
+                  <span className="text-emerald-300">/{current.pronunciation}/</span>
+                )}
+              </div>
+            )}
 
             {current.examples?.length > 0 && (
               <ul className="space-y-2">
@@ -123,12 +168,29 @@ export default function ReviewPage() {
       </div>
 
       {revealed && (
-        <button
-          onClick={markReviewed}
-          className="w-full rounded-lg bg-green-500 px-5 py-3 font-medium text-black hover:bg-green-400"
-        >
-          จำได้แล้ว ทบทวนคำถัดไป →
-        </button>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={() => rate("again")}
+            className="rounded-lg bg-red-500/90 px-4 py-3 font-medium text-white hover:bg-red-500"
+          >
+            ลืม 😵
+            <span className="block text-xs font-normal text-white/70">ทวนซ้ำ</span>
+          </button>
+          <button
+            onClick={() => rate("good")}
+            className="rounded-lg bg-emerald-500 px-4 py-3 font-medium text-black hover:bg-emerald-400"
+          >
+            จำได้ 🙂
+            <span className="block text-xs font-normal text-black/60">อีกไม่กี่วัน</span>
+          </button>
+          <button
+            onClick={() => rate("easy")}
+            className="rounded-lg bg-sky-400 px-4 py-3 font-medium text-black hover:bg-sky-300"
+          >
+            ง่ายมาก 😎
+            <span className="block text-xs font-normal text-black/60">เว้นนานขึ้น</span>
+          </button>
+        </div>
       )}
     </div>
   );

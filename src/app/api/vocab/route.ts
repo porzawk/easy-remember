@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { generateVocab, toPascalCase } from "@/lib/ai";
+import { touchStreak } from "@/lib/streak";
 import type { Prisma } from "@prisma/client";
 
 // GET /api/vocab — รายการคำศัพท์ทั้งหมดของผู้ใช้
@@ -67,6 +68,8 @@ export async function POST(req: Request) {
         notes: data.notes || null,
       },
     });
+
+    await touchStreak(session.user.id);
 
     return NextResponse.json(vocab, { status: 201 });
   } catch (err) {

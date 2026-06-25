@@ -3,36 +3,69 @@ import type { Vocab } from "@prisma/client";
 
 const DAY = 24 * 60 * 60 * 1000;
 
-// กติกาทบทวน (spaced repetition):
-// - แสดงคำที่เพิ่มมาเกิน 3 วัน
-// - ถ้าทบทวนครบ 10 ครั้งแล้ว ไม่ต้องแสดงอีก
-// - คำอายุ 3 วัน - 1 เดือน: ทบทวนได้วันละครั้ง
-// - คำอายุเกิน 1 เดือน: ทบทวนเดือนละครั้ง
+// คะแนนที่ผู้ใช้ให้ตัวเองตอนทบทวน (active recall)
+export type Rating = "again" | "good" | "easy";
+
+// แปลงเป็นค่า quality ของ SM-2 (0-5)
+const QUALITY: Record<Rating, number> = {
+  again: 2, // นึกไม่ออก / ผิด -> รีเซ็ต
+  good: 4, // นึกออก
+  easy: 5, // ง่ายมาก
+};
+
+// คำที่ถึงกำหนดทบทวน: dueAt <= ตอนนี้ (คำใหม่ dueAt = ตอนสร้าง จึงเข้าคิวทันที)
+// เรียงจากที่ค้างนานสุดก่อน เพื่อกันลืมคำเก่า
 export async function getDueVocabs(userId: string): Promise<Vocab[]> {
-  const now = Date.now();
-  const threeDaysAgo = new Date(now - 3 * DAY);
-
-  const candidates = await prisma.vocab.findMany({
-    where: {
-      userId,
-      reviewCount: { lt: 10 },
-      createdAt: { lte: threeDaysAgo },
-    },
-    orderBy: { lastReviewedAt: { sort: "asc", nulls: "first" } },
+  return prisma.vocab.findMany({
+    where: { userId, dueAt: { lte: new Date() } },
+    orderBy: { dueAt: "asc" },
   });
-
-  return candidates.filter((v) => isDue(v, now));
 }
 
-export function isDue(v: Vocab, now: number = Date.now()): boolean {
-  if (v.reviewCount >= 10) return false;
+export async function countDueVocabs(userId: string): Promise<number> {
+  return prisma.vocab.count({
+    where: { userId, dueAt: { lte: new Date() } },
+  });
+}
 
-  const ageMs = now - v.createdAt.getTime();
-  if (ageMs < 3 * DAY) return false;
+export type Schedule = {
+  easeFactor: number;
+  interval: number;
+  repetitions: number;
+  dueAt: Date;
+};
 
-  const olderThanMonth = ageMs >= 30 * DAY;
-  const cadence = olderThanMonth ? 30 * DAY : 1 * DAY;
+// อัลกอริทึม SM-2 (SuperMemo 2) — คำนวณรอบทบทวนถัดไปจากคะแนนที่ผู้ใช้ให้
+// ตอบถูก -> ระยะห่างขยายขึ้นเรื่อย ๆ (1, 6, x ease, ...) ทำให้ทบทวนถี่ตอนแรกแล้วค่อยห่างออก
+// ตอบผิด -> รีเซ็ตให้กลับมาทบทวนใหม่พรุ่งนี้
+export function schedule(
+  v: Pick<Vocab, "easeFactor" | "interval" | "repetitions">,
+  rating: Rating,
+  now: number = Date.now(),
+): Schedule {
+  const q = QUALITY[rating];
+  let { easeFactor, interval, repetitions } = v;
 
-  if (!v.lastReviewedAt) return true;
-  return now - v.lastReviewedAt.getTime() >= cadence;
+  if (q < 3) {
+    repetitions = 0;
+    interval = 1; // กลับมาทบทวนพรุ่งนี้
+  } else {
+    if (repetitions === 0) interval = 1;
+    else if (repetitions === 1) interval = 6;
+    else interval = Math.round(interval * easeFactor);
+    repetitions += 1;
+  }
+
+  // ปรับ ease factor ตามคะแนน (ต่ำสุด 1.3)
+  easeFactor = Math.max(
+    1.3,
+    easeFactor + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)),
+  );
+
+  return {
+    easeFactor,
+    interval,
+    repetitions,
+    dueAt: new Date(now + interval * DAY),
+  };
 }
