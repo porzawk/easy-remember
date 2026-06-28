@@ -12,7 +12,7 @@ const links = [
 
 export function NavBar({ user }: { user: Session["user"] }) {
   return (
-    <header className="border-b border-white/10 bg-black/20 backdrop-blur">
+    <header className="pt-safe sticky top-0 z-50 border-b border-white/10 bg-black/20 backdrop-blur">
       <nav className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-6">
           <Link href="/" className="text-lg font-bold tracking-tight">
