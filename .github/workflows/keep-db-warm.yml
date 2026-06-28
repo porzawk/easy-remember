@@ -1,0 +1,27 @@
+name: Keep DB warm
+
+# ยิง /api/health เป็นระยะ เพื่อกัน Neon compute หลับ (auto-suspend หลัง ~5 นาที)
+# หมายเหตุ: cron ของ GitHub Actions มัก "ดีเลย์" ได้หลายนาทีในช่วงคนใช้เยอะ
+# ถ้าอยากตรงเวลากว่านี้ ใช้ cron-job.org ยิงทุก 4 นาทีแทน (ดู README/คำแนะนำ)
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # ทุก 5 นาที (ค่าต่ำสุดที่ GitHub ยอมรับ)
+  workflow_dispatch: # ปุ่มกดยิงเองได้จากหน้า Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          echo "Pinging $APP_URL/api/health"
+          code=$(curl -s -o /tmp/body -w "%{http_code}" --max-time 30 "$APP_URL/api/health")
+          echo "HTTP $code"
+          cat /tmp/body
+          echo
+          test "$code" = "200"
+        env:
+          # ตั้งค่าใน repo: Settings → Secrets and variables → Actions → Variables
+          # ชื่อ APP_URL = โดเมนจริงของเว็บ เช่น https://easy-remember.vercel.app
+          APP_URL: ${{ vars.APP_URL }}
