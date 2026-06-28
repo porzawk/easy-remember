@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { DeleteVocabButton } from "@/components/DeleteVocabButton";
 import { SpeakButton } from "@/components/SpeakButton";
 import { SentencePractice } from "@/components/SentencePractice";
+import { DeckPicker } from "@/components/DeckPicker";
 
 type Example = { en: string; th: string };
 
@@ -16,9 +17,16 @@ export default async function VocabDetailPage({
   const session = await auth();
   const { id } = await params;
 
-  const vocab = await prisma.vocab.findFirst({
-    where: { id, userId: session!.user.id },
-  });
+  const [vocab, decks] = await Promise.all([
+    prisma.vocab.findFirst({
+      where: { id, userId: session!.user.id },
+    }),
+    prisma.deck.findMany({
+      where: { userId: session!.user.id },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, emoji: true },
+    }),
+  ]);
 
   if (!vocab) notFound();
 
@@ -43,6 +51,10 @@ export default async function VocabDetailPage({
         </div>
 
         <p className="mt-3 text-xl">{vocab.translation}</p>
+
+        <div className="mt-4">
+          <DeckPicker vocabId={vocab.id} currentDeckId={vocab.deckId} decks={decks} />
+        </div>
 
         {examples.length > 0 && (
           <div className="mt-6 space-y-2">

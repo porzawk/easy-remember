@@ -5,6 +5,7 @@ import type { Session } from "next-auth";
 const links = [
   { href: "/", label: "หน้าหลัก" },
   { href: "/words", label: "คลังคำศัพท์" },
+  { href: "/decks", label: "หมวด" },
   { href: "/vocab", label: "เพิ่มคำศัพท์" },
   { href: "/review", label: "ทบทวน" },
   { href: "/feed", label: "ข่าว/วิดีโอ" },

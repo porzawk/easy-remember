@@ -13,18 +13,31 @@ const QUALITY: Record<Rating, number> = {
   easy: 5, // ง่ายมาก
 };
 
+// แปลง deckId เป็นเงื่อนไข where: undefined = ทุกหมวด, "none" = ยังไม่จัดหมวด, อื่น ๆ = หมวดนั้น
+function deckWhere(deckId?: string | null) {
+  if (!deckId) return {};
+  if (deckId === "none") return { deckId: null };
+  return { deckId };
+}
+
 // คำที่ถึงกำหนดทบทวน: dueAt <= ตอนนี้ (คำใหม่ dueAt = ตอนสร้าง จึงเข้าคิวทันที)
-// เรียงจากที่ค้างนานสุดก่อน เพื่อกันลืมคำเก่า
-export async function getDueVocabs(userId: string): Promise<Vocab[]> {
+// เรียงจากที่ค้างนานสุดก่อน เพื่อกันลืมคำเก่า — กรองตามหมวดได้ด้วย deckId
+export async function getDueVocabs(
+  userId: string,
+  deckId?: string | null,
+): Promise<Vocab[]> {
   return prisma.vocab.findMany({
-    where: { userId, dueAt: { lte: new Date() } },
+    where: { userId, dueAt: { lte: new Date() }, ...deckWhere(deckId) },
     orderBy: { dueAt: "asc" },
   });
 }
 
-export async function countDueVocabs(userId: string): Promise<number> {
+export async function countDueVocabs(
+  userId: string,
+  deckId?: string | null,
+): Promise<number> {
   return prisma.vocab.count({
-    where: { userId, dueAt: { lte: new Date() } },
+    where: { userId, dueAt: { lte: new Date() }, ...deckWhere(deckId) },
   });
 }
 

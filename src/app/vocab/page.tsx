@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SpeakButton } from "@/components/SpeakButton";
 
 type Example = { en: string; th: string };
+type Deck = { id: string; name: string; emoji: string | null; count: number };
 type Generated = {
   word: string;
   translation: string;
@@ -22,6 +24,15 @@ export default function AddVocabPage() {
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<Generated | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [deckId, setDeckId] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/decks")
+      .then((r) => r.json())
+      .then((data: Deck[]) => Array.isArray(data) && setDecks(data))
+      .catch(() => {});
+  }, []);
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -54,7 +65,7 @@ export default function AddVocabPage() {
       const res = await fetch("/api/vocab", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(preview),
+        body: JSON.stringify({ ...preview, deckId: deckId || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "บันทึกไม่สำเร็จ");
@@ -78,20 +89,41 @@ export default function AddVocabPage() {
         </p>
       </div>
 
-      <form onSubmit={handleGenerate} className="flex gap-2">
-        <input
-          value={word}
-          onChange={(e) => setWord(e.target.value)}
-          placeholder="เช่น improve, schedule, brave..."
-          className="flex-1 rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none focus:border-emerald-400"
-        />
-        <button
-          type="submit"
-          disabled={loading || !word.trim()}
-          className="rounded-lg bg-emerald-500 px-5 py-3 font-medium hover:bg-emerald-400 disabled:opacity-50"
-        >
-          {loading ? "กำลังสร้าง..." : "สร้างด้วย AI"}
-        </button>
+      <form onSubmit={handleGenerate} className="space-y-2">
+        <div className="flex gap-2">
+          <input
+            value={word}
+            onChange={(e) => setWord(e.target.value)}
+            placeholder="เช่น improve, schedule, brave..."
+            className="flex-1 rounded-lg border border-white/15 bg-white/5 px-4 py-3 outline-none focus:border-emerald-400"
+          />
+          <button
+            type="submit"
+            disabled={loading || !word.trim()}
+            className="rounded-lg bg-emerald-500 px-5 py-3 font-medium hover:bg-emerald-400 disabled:opacity-50"
+          >
+            {loading ? "กำลังสร้าง..." : "สร้างด้วย AI"}
+          </button>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <label className="text-white/60">หมวด:</label>
+          <select
+            value={deckId}
+            onChange={(e) => setDeckId(e.target.value)}
+            className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 outline-none focus:border-emerald-400"
+          >
+            <option value="">— ไม่จัดหมวด —</option>
+            {decks.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.emoji ? `${d.emoji} ` : ""}
+                {d.name}
+              </option>
+            ))}
+          </select>
+          <Link href="/decks" className="text-emerald-300 hover:text-emerald-200">
+            + จัดการหมวด
+          </Link>
+        </div>
       </form>
 
       {error && (

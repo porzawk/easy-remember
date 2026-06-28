@@ -6,13 +6,14 @@ import { touchStreak } from "@/lib/streak";
 
 const RATINGS: Rating[] = ["again", "good", "easy"];
 
-// GET /api/review — คำที่ถึงกำหนดทบทวน
-export async function GET() {
+// GET /api/review — คำที่ถึงกำหนดทบทวน (กรองตามหมวดด้วย ?deckId= ได้)
+export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const due = await getDueVocabs(session.user.id);
+  const deckId = new URL(req.url).searchParams.get("deckId");
+  const due = await getDueVocabs(session.user.id, deckId);
   return NextResponse.json(due);
 }
 

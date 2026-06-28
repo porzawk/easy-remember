@@ -5,15 +5,39 @@ import { generateVocab, toPascalCase } from "@/lib/ai";
 import { touchStreak } from "@/lib/streak";
 import type { Prisma } from "@prisma/client";
 
-// GET /api/vocab — รายการคำศัพท์ทั้งหมดของผู้ใช้
-export async function GET() {
+// ตรวจว่า deckId (ถ้าส่งมา) เป็นหมวดของผู้ใช้คนนี้จริง — คืน null ถ้าไม่ระบุหมวด
+async function resolveDeckId(
+  userId: string,
+  raw: unknown,
+): Promise<string | null> {
+  const deckId = String(raw ?? "").trim();
+  if (!deckId) return null;
+  const owned = await prisma.deck.findFirst({
+    where: { id: deckId, userId },
+    select: { id: true },
+  });
+  return owned ? deckId : null;
+}
+
+// GET /api/vocab — รายการคำศัพท์ของผู้ใช้ (กรองตามหมวดด้วย ?deckId= ได้)
+export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  const { searchParams } = new URL(req.url);
+  const deckParam = searchParams.get("deckId");
+  // deckId=none = เฉพาะคำที่ยังไม่จัดหมวด, ค่าอื่น = หมวดนั้น, ไม่ส่ง = ทั้งหมด
+  const deckFilter =
+    deckParam === "none"
+      ? { deckId: null }
+      : deckParam
+        ? { deckId: deckParam }
+        : {};
+
   const vocabs = await prisma.vocab.findMany({
-    where: { userId: session.user.id },
+    where: { userId: session.user.id, ...deckFilter },
     orderBy: { createdAt: "desc" },
   });
   return NextResponse.json(vocabs);
@@ -34,6 +58,7 @@ export async function POST(req: Request) {
   }
   // บังคับ Pascal Case เสมอ (generateVocab จะทำให้เองในกรณีเรียก AI)
   const word = toPascalCase(rawWord);
+  const deckId = await resolveDeckId(session.user.id, body?.deckId);
 
   try {
     // ถ้า client ส่ง translation มาแล้ว ใช้เลย ไม่งั้นเรียก Z.ai
@@ -57,6 +82,7 @@ export async function POST(req: Request) {
         pronunciation: data.pronunciation || null,
         examples: data.examples as unknown as Prisma.InputJsonValue,
         notes: data.notes || null,
+        deckId,
       },
       create: {
         userId: session.user.id,
@@ -66,6 +92,7 @@ export async function POST(req: Request) {
         pronunciation: data.pronunciation || null,
         examples: data.examples as unknown as Prisma.InputJsonValue,
         notes: data.notes || null,
+        deckId,
       },
     });
 

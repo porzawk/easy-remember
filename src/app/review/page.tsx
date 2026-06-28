@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SpeakButton } from "@/components/SpeakButton";
 
 type Example = { en: string; th: string };
+type Deck = { id: string; name: string; emoji: string | null; count: number };
 type Vocab = {
   id: string;
   word: string;
@@ -35,16 +36,63 @@ export default function ReviewPage() {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [done, setDone] = useState(0);
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [deck, setDeck] = useState<string>(""); // "" = ทุกหมวด, "none" = ยังไม่จัดหมวด, อื่น = หมวดนั้น
 
   useEffect(() => {
-    fetch("/api/review")
+    fetch("/api/decks")
+      .then((r) => r.json())
+      .then((data: Deck[]) => Array.isArray(data) && setDecks(data))
+      .catch(() => {});
+  }, []);
+
+  // โหลดคิวใหม่ทุกครั้งที่เปลี่ยนหมวด
+  useEffect(() => {
+    setQueue(null);
+    setIndex(0);
+    setRevealed(false);
+    setDone(0);
+    const qs = deck ? `?deckId=${deck}` : "";
+    fetch(`/api/review${qs}`)
       .then((r) => r.json())
       .then((data: Vocab[]) => setQueue(data))
       .catch(() => setQueue([]));
-  }, []);
+  }, [deck]);
+
+  const deckTabs = [
+    { key: "", label: "ทุกหมวด", emoji: "📚" },
+    ...decks
+      .filter((d) => d.count > 0)
+      .map((d) => ({ key: d.id, label: d.name, emoji: d.emoji ?? "📁" })),
+  ];
+
+  // แถบเลือกหมวด (โชว์เฉพาะเมื่อมีหมวดให้เลือกมากกว่า "ทุกหมวด")
+  const deckSelector =
+    deckTabs.length > 1 ? (
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {deckTabs.map((t) => (
+          <button
+            key={t.key || "all"}
+            onClick={() => setDeck(t.key)}
+            className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm ${
+              deck === t.key
+                ? "border-emerald-400 bg-emerald-500/20 text-emerald-200"
+                : "border-white/15 text-white/70 hover:bg-white/10"
+            }`}
+          >
+            {t.emoji} {t.label}
+          </button>
+        ))}
+      </div>
+    ) : null;
 
   if (queue === null) {
-    return <p className="text-white/60">กำลังโหลด...</p>;
+    return (
+      <div className="space-y-6">
+        {deckSelector}
+        <p className="text-white/60">กำลังโหลด...</p>
+      </div>
+    );
   }
 
   const total = queue.length;
@@ -52,18 +100,21 @@ export default function ReviewPage() {
 
   if (!current) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-        <p className="text-5xl">🎉</p>
-        <h1 className="text-2xl font-bold">
-          {done > 0 ? `ทบทวนครบ ${done} ครั้งแล้ว!` : "ไม่มีคำที่ต้องทบทวนตอนนี้"}
-        </h1>
-        <p className="text-white/60">เยี่ยมมาก กลับมาทบทวนใหม่ในวันถัดไปได้เลย</p>
-        <Link
-          href="/"
-          className="rounded-lg bg-emerald-500 px-5 py-2 font-medium hover:bg-emerald-400"
-        >
-          กลับหน้าหลัก
-        </Link>
+      <div className="space-y-6">
+        {deckSelector}
+        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center">
+          <p className="text-5xl">🎉</p>
+          <h1 className="text-2xl font-bold">
+            {done > 0 ? `ทบทวนครบ ${done} ครั้งแล้ว!` : "ไม่มีคำที่ต้องทบทวนในหมวดนี้"}
+          </h1>
+          <p className="text-white/60">เยี่ยมมาก เลือกหมวดอื่น หรือกลับมาใหม่วันถัดไปได้เลย</p>
+          <Link
+            href="/"
+            className="rounded-lg bg-emerald-500 px-5 py-2 font-medium hover:bg-emerald-400"
+          >
+            กลับหน้าหลัก
+          </Link>
+        </div>
       </div>
     );
   }
@@ -100,6 +151,7 @@ export default function ReviewPage() {
 
   return (
     <div className="space-y-6">
+      {deckSelector}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">ทบทวนคำศัพท์</h1>
         <span className="text-sm text-white/60">เหลือ {total - index} คำ</span>

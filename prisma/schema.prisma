@@ -17,6 +17,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   vocabs        Vocab[]
+  decks         Deck[]
   createdAt     DateTime  @default(now())
 
   // ===== Habit / streak =====
@@ -62,10 +63,29 @@ model VerificationToken {
 }
 
 // ===== App models =====
+// หมวด/กลุ่มคำศัพท์ของผู้ใช้ (เช่น เกม, หนัง, คำใช้บ่อย) — 1 คำอยู่ได้ 1 หมวด
+model Deck {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name      String                            // ชื่อหมวด
+  emoji     String?                           // ไอคอน (ถ้ามี)
+  vocabs    Vocab[]
+  createdAt DateTime @default(now())
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
 model Vocab {
   id             String    @id @default(cuid())
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // หมวดที่คำนี้สังกัด (ว่างได้ = ยังไม่จัดหมวด); ลบหมวดแล้วคำไม่หาย แค่หลุดหมวด
+  deckId         String?
+  deck           Deck?     @relation(fields: [deckId], references: [id], onDelete: SetNull)
 
   word           String                       // คำศัพท์ภาษาอังกฤษ
   translation    String                       // คำแปลภาษาไทย
@@ -87,4 +107,5 @@ model Vocab {
   @@unique([userId, word])
   @@index([userId])
   @@index([userId, dueAt])
+  @@index([userId, deckId])
 }
