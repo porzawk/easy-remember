@@ -22,7 +22,12 @@ type Direction = "en2th" | "th2en";
 
 function pickDirection(seed: string): Direction {
   // สุ่มจาก id ของคำ (เสถียรต่อ render เดียวกัน) ให้คละทิศทาง
-  return seed.charCodeAt(0) % 2 === 0 ? "en2th" : "th2en";
+  // หมายเหตุ: cuid ขึ้นต้นด้วย 'c' เสมอ จึงต้อง hash ทั้งสตริง ไม่ใช่ดูแค่ตัวแรก
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash + seed.charCodeAt(i)) % 2;
+  }
+  return hash === 0 ? "en2th" : "th2en";
 }
 
 export default function ReviewPage() {
