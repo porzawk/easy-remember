@@ -18,18 +18,6 @@ type Vocab = {
 };
 
 type Rating = "again" | "good" | "easy";
-// สลับทิศทางการนึก: en->th (เห็นคำอังกฤษ นึกคำแปล) / th->en (เห็นคำแปล นึกคำอังกฤษ = ฝึกใช้จริง)
-type Direction = "en2th" | "th2en";
-
-function pickDirection(seed: string): Direction {
-  // สุ่มจาก id ของคำ (เสถียรต่อ render เดียวกัน) ให้คละทิศทาง
-  // หมายเหตุ: cuid ขึ้นต้นด้วย 'c' เสมอ จึงต้อง hash ทั้งสตริง ไม่ใช่ดูแค่ตัวแรก
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash + seed.charCodeAt(i)) % 2;
-  }
-  return hash === 0 ? "en2th" : "th2en";
-}
 
 export default function ReviewPage() {
   const [queue, setQueue] = useState<Vocab[] | null>(null);
@@ -119,7 +107,8 @@ export default function ReviewPage() {
     );
   }
 
-  const direction = pickDirection(current.id);
+  // ประโยคแรกใช้เป็น guide (โชว์เฉพาะอังกฤษ ไม่โชว์คำแปล จะได้ไม่เฉลยไปก่อน)
+  const guide = current.examples?.[0];
 
   async function rate(rating: Rating) {
     const card = current;
@@ -146,9 +135,6 @@ export default function ReviewPage() {
     }
   }
 
-  // ด้านบนของการ์ด = สิ่งที่ต้องนึก, ด้านล่าง (เฉลย) = คำตอบ
-  const promptIsEnglish = direction === "en2th";
-
   return (
     <div className="space-y-6">
       {deckSelector}
@@ -166,20 +152,26 @@ export default function ReviewPage() {
 
       <div className="min-h-[18rem] rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
         <p className="mb-4 text-xs uppercase tracking-wide text-white/40">
-          {promptIsEnglish ? "คำนี้แปลว่าอะไร?" : "ภาษาอังกฤษพูดว่าอะไร?"}
+          คำนี้แปลว่าอะไร?
         </p>
 
-        {promptIsEnglish ? (
-          <div className="flex items-center justify-center gap-3">
-            <p className="text-3xl font-bold">{current.word}</p>
-            <SpeakButton text={current.word} label={`ฟังเสียงคำว่า ${current.word}`} size="md" />
-          </div>
-        ) : (
-          <p className="text-3xl font-bold">{current.translation}</p>
+        <div className="flex items-center justify-center gap-3">
+          <p className="text-3xl font-bold">{current.word}</p>
+          <SpeakButton text={current.word} label={`ฟังเสียงคำว่า ${current.word}`} size="md" />
+        </div>
+
+        {current.pronunciation && (
+          <p className="mt-1 text-emerald-300">/{current.pronunciation}/</p>
         )}
 
-        {promptIsEnglish && current.pronunciation && (
-          <p className="mt-1 text-emerald-300">/{current.pronunciation}/</p>
+        {guide && (
+          <div className="mx-auto mt-5 max-w-md rounded-lg border border-white/10 bg-black/20 p-3">
+            <p className="mb-1 text-[11px] uppercase tracking-wide text-white/40">ประโยคใบ้</p>
+            <div className="flex items-start gap-2 text-left">
+              <p className="flex-1">{guide.en}</p>
+              <SpeakButton text={guide.en} label="ฟังเสียงประโยคนี้" />
+            </div>
+          </div>
         )}
 
         {!revealed ? (
@@ -191,17 +183,7 @@ export default function ReviewPage() {
           </button>
         ) : (
           <div className="mt-6 space-y-4 text-left">
-            {promptIsEnglish ? (
-              <p className="text-center text-xl">{current.translation}</p>
-            ) : (
-              <div className="flex items-center justify-center gap-3">
-                <p className="text-center text-2xl font-bold">{current.word}</p>
-                <SpeakButton text={current.word} label={`ฟังเสียงคำว่า ${current.word}`} size="md" />
-                {current.pronunciation && (
-                  <span className="text-emerald-300">/{current.pronunciation}/</span>
-                )}
-              </div>
-            )}
+            <p className="text-center text-xl">{current.translation}</p>
 
             {current.examples?.length > 0 && (
               <ul className="space-y-2">
